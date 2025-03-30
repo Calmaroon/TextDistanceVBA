@@ -1,7 +1,7 @@
 Attribute VB_Name = "Hamming"
 Option Explicit
-Function Hamming(strInput1 As String, strInput2 As String, Optional boolCaseSensitive = True) As Long
-    Hamming = distance(strInput1, strInput2, boolCaseSensitive)
+Function hamming(strInput1 As String, strInput2 As String, Optional boolCaseSensitive = True) As Long
+    hamming = distance(strInput1, strInput2, boolCaseSensitive)
 End Function
 Function distance(strInput1 As String, strInput2 As String, Optional boolCaseSensitive = True) As Long
     Dim i As Long
