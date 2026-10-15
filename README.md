@@ -22,6 +22,7 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Longest common substring (LCSStr) | `LCSStr.bas` | Done |
 | Ratcliff-Obershelp | `RatcliffObershelp.bas` | Done |
 | Prefix, Postfix, Length, Identity, Matrix | `Simple.bas` | Done |
+| MRA, Editex | `Phonetic.bas` | Done |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -105,6 +106,18 @@ Debug.Print RatcliffObershelp_Similarity("WIKIMEDIA", "WIKIMANIA")   ' 0.777...
 Debug.Print Matrix_Similarity("G", "A", Range("E1:G3"))   ' -1 (symmetric lookup)
 ```
 
+### Phonetic measures (`Phonetic.bas`)
+Both compare upper-cased text, so they are always case-insensitive and have no `CaseSensitive` argument.
+
+- **MRA** (Match Rating Approach, the Western Airlines surname-matching method). Each name becomes a short codex: vowels after the first letter are removed, repeated letters collapsed, and anything over 6 characters is cut to the first 3 + last 3. `MRA_Similarity` compares the codexes (0 to `MRA_Maximum`, the longer codex length), and is 0 when the codex lengths differ by more than 2.
+- **Editex** is an edit distance where replacing letters from the same sound group (vowels, B/P, C/K/Q, D/T, L/R, M/N, G/J, F/P/V, S/X/Z, C/S/Z) costs less than unrelated letters. Optional arguments: `LocalMode` (default `False`), `MatchCost` (0), `GroupCost` (1), `MismatchCost` (2). The maximum is the longer length times `MismatchCost`.
+
+```vba
+Debug.Print MRA_Codex("Catherine")              ' CTHRN
+Debug.Print MRA_Similarity("Byrne", "Boern")    ' 1
+Debug.Print Editex_Distance("Byrne", "Boern")   ' 4
+```
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -133,6 +146,9 @@ With `Excel_UDF.bas` imported:
 | `=LENGTH(A1, B1)`, `_SIM`, `_NDIST`, `_NSIM` | `Length_*` |
 | `=IDENTITY(A1, B1, [CaseSensitive])`, `=IDENTITY_DIST(...)` | `Identity_Similarity`, `Identity_Distance` |
 | `=MATRIX(A1, B1, [Table], [MismatchCost], [MatchCost], [Symmetric], [CaseSensitive])`, `=MATRIX_DIST(...)` | `Matrix_Similarity`, `Matrix_Distance` |
+| `=MRACODEX(A1)` | `MRA_Codex` (returns text) |
+| `=MRA(A1, B1)`, `_DIST`, `_NDIST`, `_NSIM` | `MRA_*` |
+| `=EDITEX(A1, B1, [LocalMode], [MatchCost], [GroupCost], [MismatchCost])`, `_SIM`, `_NDIST`, `_NSIM` | `Editex_*` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 

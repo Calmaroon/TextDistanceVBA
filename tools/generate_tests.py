@@ -73,7 +73,24 @@ ALGORITHMS = {
     "Postfix": ("Postfix", [("", td.Postfix())], True),
     "Length": ("Length", [("", td.Length())], True),
     "Identity": ("Identity", [("", td.Identity())], True),
+    "MRA": ("MRA", [("", td.MRA())], True),
+    "Editex": ("Editex", [
+        ("False", td.Editex(local=False, external=False)),
+        ("True", td.Editex(local=True, external=False)),
+        ("False, 1, 2, 4", td.Editex(match_cost=1, group_cost=2, mismatch_cost=4, external=False)),
+        ("False, 3, 1, 2", td.Editex(match_cost=3, group_cost=1, mismatch_cost=2, external=False)),
+    ], True),
 }
+
+# Algorithms that always ignore case (no CaseSensitive argument)
+NO_CASE_ARG = {"MRA", "Editex"}
+# Extra cases for particular algorithms
+NAME_CASES = [("Byrne", "Boern"), ("Smith", "Smyth"), ("Catherine", "Kathryn"),
+              ("Robert", "Rupert"), ("Ashcraft", "Ashcroft"), ("Thompson", "Thomson"),
+              ("Aaron", "Erin"), ("Lee", "Leigh"), ("Jon", "John"), ("Schmidt", "Smith"),
+              ("Williams", "Wiliams"), ("Hawthorne", "Hathorn"), ("Shackleford", "Shackelford"),
+              ("Bartholomew", "Bart"), ("O'Brien", "OBrien"), ("Mc Donald", "MacDonald")]
+EXTRA_CASES = {"MRA": NAME_CASES, "Editex": NAME_CASES}
 
 # Matrix takes a lookup table instead of the usual arguments; see matrix_checks
 DNA_TABLE = [("A", "A", 10), ("G", "G", 7), ("C", "C", 9), ("T", "T", 8),
@@ -102,6 +119,8 @@ TEST_FILES = {
     "LengthTests": ["Length"],
     "IdentityTests": ["Identity"],
     "MatrixTests": ["Matrix"],
+    "MRATests": ["MRA"],
+    "EditexTests": ["Editex"],
 }
 
 
@@ -135,10 +154,13 @@ def checks_for(name, seed):
     cases = COMMON_CASES + random_cases(seed)
     if name in LONG_CASE_ALGOS:
         cases += long_cases(seed)
+    cases += EXTRA_CASES.get(name, [])
+    cs_arg = "" if name in NO_CASE_ARG else ", True"
     lines = []
-    for extra, algo in variants:
-        for a, b in cases:
-            args = f"{vba_str(a)}, {vba_str(b)}, True" + (f", {extra}" if extra else "")
+    for index, (extra, algo) in enumerate(variants):
+        # Variants beyond the first two get a smaller case set to keep modules small
+        for a, b in (cases if index < 2 else COMMON_CASES[:12] + EXTRA_CASES.get(name, [])):
+            args = f"{vba_str(a)}, {vba_str(b)}{cs_arg}" + (f", {extra}" if extra else "")
             label = f"{prefix}({short_repr(a)}, {short_repr(b)}{', ' + extra if extra else ''})"
             for func, value, chk in (
                 ("Distance", algo.distance(a, b), check),
@@ -152,9 +174,14 @@ def checks_for(name, seed):
                 func = STRING_FUNCS[name]
                 lines.append(f'    CheckS {vba_str(label + " " + func)}, '
                              f"{prefix}_{func}({args}), {vba_str(algo(a, b))}")
+    if name == "MRA":
+        names = sorted({x for pair in cases for x in pair})
+        for word in names:
+            lines.append(f"    CheckS {vba_str('MRA_Codex(' + repr(word) + ')')}, "
+                         f"MRA_Codex({vba_str(word)}), {vba_str(td.MRA()._calc_mra(word))}")
     # CaseSensitive:=False is a VBA addition: compare with Python on lowercased input
     extra, algo = variants[0]
-    for a, b in CASE_INSENSITIVE_CASES:
+    for a, b in ([] if name in NO_CASE_ARG else CASE_INSENSITIVE_CASES):
         args = f"{vba_str(a)}, {vba_str(b)}, False" + (f", {extra}" if extra else "")
         label = f"{prefix}({a!r}, {b!r}, CaseSensitive=False)"
         lines.append(f"    {check} {vba_str(label + ' Distance')}, {prefix}_Distance({args}), "

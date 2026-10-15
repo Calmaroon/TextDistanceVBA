@@ -63,6 +63,9 @@ UDF_FORMULAS = [
     ('=IDENTITY("abc";"ABC";0)', 1), ('=IDENTITY_DIST("abc";"ABC")', 1),
     ('=MATRIX("A";"A")', 1), ('=MATRIX("G";"A";F1:H3)', -1),
     ('=MATRIX("G";"A";F1:H3;0;1;0)', 0), ('=MATRIX_DIST("A";"A";F1:H3;0;10)', 0),
+    ('=MRACODEX("Catherine")', "CTHRN"), ('=MRA("Byrne";"Boern")', 1),
+    ('=MRA_DIST("Smith";"Smyth")', 3), ('=EDITEX("Byrne";"Boern")', 4),
+    ('=EDITEX_NSIM("Smith";"smith")', 1),
 ]
 
 
@@ -105,6 +108,23 @@ def enable_macros(ctx):
     return (PropertyValue(Name="MacroExecutionMode", Value=4),)  # ALWAYS_EXECUTE_NO_WARN
 
 
+def check_names():
+    """VBA names ignore case: duplicate public names across modules are ambiguous."""
+    seen = {}
+    ok = True
+    for path in LIBRARY:
+        with open(path, encoding="cp1252") as f:
+            src = f.read()
+        found = [re.search(r'VB_Name = "(\w+)"', src).group(1)]
+        found += re.findall(r"^Public (?:Function|Sub) (\w+)", src, flags=re.M)
+        for name in found:
+            other = seen.setdefault(name.lower(), os.path.basename(path))
+            if other != os.path.basename(path):
+                print(f"FAIL duplicate name {name}: {other} and {os.path.basename(path)}")
+                ok = False
+    return ok
+
+
 def load_source(path, is_test):
     with open(path, encoding="cp1252") as f:
         src = f.read().replace("\r\n", "\n")
@@ -129,6 +149,8 @@ def connect():
 
 
 def main():
+    if not check_names():
+        return 1
     office = subprocess.Popen([
         "soffice", "--headless", "--invisible", "--norestore", "--nologo",
         f"--accept=socket,host=localhost,port={PORT};urp;"],

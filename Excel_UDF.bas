@@ -9,7 +9,7 @@ Attribute VB_Name = "modExcelUDF"
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
 ' textdistance.<name>(a, b): a distance for edit distances, a similarity for
-' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix, and the
+' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix / MRA, and the
 ' matching text itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
@@ -277,4 +277,58 @@ Public Function MATRIX_DIST(ByVal Text1 As String, ByVal Text2 As String, _
                             Optional ByVal Symmetric As Boolean = True, _
                             Optional ByVal CaseSensitive As Boolean = True) As Double
     MATRIX_DIST = Matrix_Distance(Text1, Text2, Table, MismatchCost, MatchCost, Symmetric, CaseSensitive)
+End Function
+
+' MRA codex of a name (named MRACODEX because VBA names ignore case and
+' MRA_Codex is the library function).
+Public Function MRACODEX(ByVal Text As String) As String
+    MRACODEX = MRA_Codex(Text)
+End Function
+
+Public Function MRA(ByVal Text1 As String, ByVal Text2 As String) As Long
+    MRA = MRA_Similarity(Text1, Text2)
+End Function
+
+Public Function MRA_DIST(ByVal Text1 As String, ByVal Text2 As String) As Long
+    MRA_DIST = MRA_Distance(Text1, Text2)
+End Function
+
+Public Function MRA_NDIST(ByVal Text1 As String, ByVal Text2 As String) As Double
+    MRA_NDIST = MRA_NormalizedDistance(Text1, Text2)
+End Function
+
+Public Function MRA_NSIM(ByVal Text1 As String, ByVal Text2 As String) As Double
+    MRA_NSIM = MRA_NormalizedSimilarity(Text1, Text2)
+End Function
+
+Public Function EDITEX(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal LocalMode As Boolean = False, _
+                       Optional ByVal MatchCost As Long = 0, _
+                       Optional ByVal GroupCost As Long = 1, _
+                       Optional ByVal MismatchCost As Long = 2) As Long
+    EDITEX = Editex_Distance(Text1, Text2, LocalMode, MatchCost, GroupCost, MismatchCost)
+End Function
+
+Public Function EDITEX_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal LocalMode As Boolean = False, _
+                           Optional ByVal MatchCost As Long = 0, _
+                           Optional ByVal GroupCost As Long = 1, _
+                           Optional ByVal MismatchCost As Long = 2) As Long
+    EDITEX_SIM = Editex_Similarity(Text1, Text2, LocalMode, MatchCost, GroupCost, MismatchCost)
+End Function
+
+Public Function EDITEX_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal LocalMode As Boolean = False, _
+                             Optional ByVal MatchCost As Long = 0, _
+                             Optional ByVal GroupCost As Long = 1, _
+                             Optional ByVal MismatchCost As Long = 2) As Double
+    EDITEX_NDIST = Editex_NormalizedDistance(Text1, Text2, LocalMode, MatchCost, GroupCost, MismatchCost)
+End Function
+
+Public Function EDITEX_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal LocalMode As Boolean = False, _
+                            Optional ByVal MatchCost As Long = 0, _
+                            Optional ByVal GroupCost As Long = 1, _
+                            Optional ByVal MismatchCost As Long = 2) As Double
+    EDITEX_NSIM = Editex_NormalizedSimilarity(Text1, Text2, LocalMode, MatchCost, GroupCost, MismatchCost)
 End Function
