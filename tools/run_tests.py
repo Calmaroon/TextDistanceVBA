@@ -40,7 +40,10 @@ End Function
 
 
 # Worksheet formulas for Excel_UDF.bas (Calc uses ; as argument separator)
-UDF_CELLS = {"A1": "martha", "B1": "marhta", "A2": 12345, "B2": 12354}
+UDF_CELLS = {"A1": "martha", "B1": "marhta", "A2": 12345, "B2": 12354,
+             # Matrix lookup table in F1:H3
+             "F1": "A", "G1": "A", "H1": 10, "F2": "A", "G2": "G", "H2": -1,
+             "F3": "G", "G3": "G", "H3": 7}
 UDF_FORMULAS = [
     ('=HAMMING("test";"testing")', 3), ('=HAMMING_SIM("test";"text")', 3),
     ('=HAMMING_NSIM("Test";"text";0)', 0.75),
@@ -54,6 +57,12 @@ UDF_FORMULAS = [
     ('=LCSSTR_DIST(A1;B1)', 3), ('=LCSSTR("ABC";"zbc";0)', "bc"),
     ('=RATCLIFF_OBERSHELP("WIKIMEDIA";"WIKIMANIA")', 7 / 9),
     ('=RATCLIFF_OBERSHELP_DIST("WIKIMEDIA";"WIKIMANIA")', 2 / 9),
+    ('=PREFIX("test";"text")', "te"), ('=PREFIX_NSIM("test";"text")', 0.5),
+    ('=POSTFIX("ring";"sing")', "ing"), ('=POSTFIX_DIST("ring";"sing")', 1),
+    ('=LENGTH("test";"testing")', 3), ('=LENGTH_SIM("test";"testing")', 4),
+    ('=IDENTITY("abc";"ABC";0)', 1), ('=IDENTITY_DIST("abc";"ABC")', 1),
+    ('=MATRIX("A";"A")', 1), ('=MATRIX("G";"A";F1:H3)', -1),
+    ('=MATRIX("G";"A";F1:H3;0;1;0)', 0), ('=MATRIX_DIST("A";"A";F1:H3;0;10)', 0),
 ]
 
 

@@ -9,8 +9,8 @@ Attribute VB_Name = "modExcelUDF"
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
 ' textdistance.<name>(a, b): a distance for edit distances, a similarity for
-' Jaro / Jaro-Winkler / Ratcliff-Obershelp, and the matching text itself for
-' LCSSEQ / LCSSTR.
+' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix, and the
+' matching text itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
 '           =LEVENSHTEIN_NSIM(A2, B2, FALSE) -> case-insensitive similarity 0..1
@@ -177,4 +177,104 @@ End Function
 Public Function RATCLIFF_OBERSHELP_DIST(ByVal Text1 As String, ByVal Text2 As String, _
                                         Optional ByVal CaseSensitive As Boolean = True) As Double
     RATCLIFF_OBERSHELP_DIST = RatcliffObershelp_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function PREFIX(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True) As String
+    PREFIX = Prefix_CommonPrefix(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function PREFIX_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True) As Long
+    PREFIX_SIM = Prefix_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function PREFIX_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Long
+    PREFIX_DIST = Prefix_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function PREFIX_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Double
+    PREFIX_NDIST = Prefix_NormalizedDistance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function PREFIX_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    PREFIX_NSIM = Prefix_NormalizedSimilarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function POSTFIX(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True) As String
+    POSTFIX = Postfix_CommonPostfix(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function POSTFIX_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Long
+    POSTFIX_SIM = Postfix_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function POSTFIX_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Long
+    POSTFIX_DIST = Postfix_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function POSTFIX_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal CaseSensitive As Boolean = True) As Double
+    POSTFIX_NDIST = Postfix_NormalizedDistance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function POSTFIX_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Double
+    POSTFIX_NSIM = Postfix_NormalizedSimilarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LENGTH(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True) As Long
+    LENGTH = Length_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LENGTH_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True) As Long
+    LENGTH_SIM = Length_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LENGTH_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Double
+    LENGTH_NDIST = Length_NormalizedDistance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LENGTH_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    LENGTH_NSIM = Length_NormalizedSimilarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function IDENTITY(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal CaseSensitive As Boolean = True) As Long
+    IDENTITY = Identity_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function IDENTITY_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal CaseSensitive As Boolean = True) As Long
+    IDENTITY_DIST = Identity_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+' Table: optional 3-column range (string 1, string 2, score).
+Public Function MATRIX(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal Table As Variant, _
+                       Optional ByVal MismatchCost As Double = 0, _
+                       Optional ByVal MatchCost As Double = 1, _
+                       Optional ByVal Symmetric As Boolean = True, _
+                       Optional ByVal CaseSensitive As Boolean = True) As Double
+    MATRIX = Matrix_Similarity(Text1, Text2, Table, MismatchCost, MatchCost, Symmetric, CaseSensitive)
+End Function
+
+' Table: optional 3-column range (string 1, string 2, score).
+Public Function MATRIX_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal Table As Variant, _
+                            Optional ByVal MismatchCost As Double = 0, _
+                            Optional ByVal MatchCost As Double = 1, _
+                            Optional ByVal Symmetric As Boolean = True, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    MATRIX_DIST = Matrix_Distance(Text1, Text2, Table, MismatchCost, MatchCost, Symmetric, CaseSensitive)
 End Function

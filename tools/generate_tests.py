@@ -69,10 +69,22 @@ ALGORITHMS = {
     "LCSSeq": ("LCSSeq", [("", td.LCSSeq(external=False))], True),
     "LCSStr": ("LCSStr", [("", td.LCSStr(external=False))], True),
     "RatcliffObershelp": ("RatcliffObershelp", [("", td.RatcliffObershelp(external=False))], False),
+    "Prefix": ("Prefix", [("", td.Prefix())], True),
+    "Postfix": ("Postfix", [("", td.Postfix())], True),
+    "Length": ("Length", [("", td.Length())], True),
+    "Identity": ("Identity", [("", td.Identity())], True),
 }
 
+# Matrix takes a lookup table instead of the usual arguments; see matrix_checks
+DNA_TABLE = [("A", "A", 10), ("G", "G", 7), ("C", "C", 9), ("T", "T", 8),
+             ("A", "G", -1), ("A", "C", -3), ("A", "T", -4), ("G", "C", -5),
+             ("G", "T", -3), ("C", "T", 0)]
+DUP_TABLE = DNA_TABLE + [("A", "G", 99), ("a", "c", 42)]
+HELPERS = {"Matrix": [("DnaTable", DNA_TABLE), ("DupTable", DUP_TABLE)]}
+
 # Extra string-returning functions: name -> VBA suffix (Python: algo(a, b))
-STRING_FUNCS = {"LCSSeq": "Sequence", "LCSStr": "Substring"}
+STRING_FUNCS = {"LCSSeq": "Sequence", "LCSStr": "Substring",
+                "Prefix": "CommonPrefix", "Postfix": "CommonPostfix"}
 # Algorithms also tested on 200+ character strings
 LONG_CASE_ALGOS = {"LCSSeq", "LCSStr", "RatcliffObershelp"}
 
@@ -85,6 +97,11 @@ TEST_FILES = {
     "LCSSeqTests": ["LCSSeq"],
     "LCSStrTests": ["LCSStr"],
     "RatcliffObershelpTests": ["RatcliffObershelp"],
+    "PrefixTests": ["Prefix"],
+    "PostfixTests": ["Postfix"],
+    "LengthTests": ["Length"],
+    "IdentityTests": ["Identity"],
+    "MatrixTests": ["Matrix"],
 }
 
 
@@ -151,11 +168,65 @@ def checks_for(name, seed):
     return lines
 
 
+def matrix_checks():
+    pairs = [(a, b) for a in "ACGT" for b in "ACGT"] + [
+        ("A", "X"), ("X", "A"), ("X", "X"), ("AG", "AG"), ("AG", "GA"), ("", ""), ("", "A")]
+    # (VBA table expression, Python table, MismatchCost, MatchCost, Symmetric, CaseSensitive)
+    variants = [
+        ("Empty", None, 0, 1, True, True),
+        ("Empty", None, -2, 5, True, True),
+        ("DnaTable()", DNA_TABLE, 0, 1, True, True),
+        ("DnaTable()", DNA_TABLE, 0, 1, False, True),
+        ("DnaTable()", DNA_TABLE, -7, 0, True, True),
+        ("DupTable()", DUP_TABLE, 0, 1, True, True),
+        ("DupTable()", DUP_TABLE, 0, 1, True, False),
+    ]
+    lines = []
+    for table_expr, table, mismatch, match, symmetric, cs in variants:
+        mat = None
+        if table:
+            mat = {}
+            for a, b, v in table:
+                mat[(a, b) if cs else (a.lower(), b.lower())] = v
+        algo = td.Matrix(mat=mat, mismatch_cost=mismatch, match_cost=match, symmetric=symmetric)
+        extra = [] if cs else [(p.lower(), q) for p, q in pairs[:6]]
+        for a, b in pairs + extra:
+            pa, pb = (a, b) if cs else (a.lower(), b.lower())
+            args = f"{vba_str(a)}, {vba_str(b)}, {table_expr}, {mismatch}, {match}, {symmetric}, {cs}"
+            label = f"Matrix({a!r}, {b!r}, {table_expr}, {mismatch}, {match}, {symmetric}, {cs})"
+            for func, value in (("Similarity", algo.similarity(pa, pb)),
+                                ("Distance", algo.distance(pa, pb)),
+                                ("NormalizedDistance", algo.normalized_distance(pa, pb)),
+                                ("NormalizedSimilarity", algo.normalized_similarity(pa, pb)),
+                                ("Maximum", algo.maximum(pa, pb))):
+                lines.append(f"    CheckD {vba_str(label + ' ' + func)}, "
+                             f"Matrix_{func}({args}), {vba_num(value)}")
+    # Omitted optional arguments
+    lines.append('    CheckD "Matrix(""A"", ""A"") defaults", Matrix_Similarity("A", "A"), 1')
+    lines.append('    CheckD "Matrix(""A"", ""G"") defaults", Matrix_Similarity("A", "G"), 0')
+    lines.append('    CheckD "Matrix(""A"", ""G"", DnaTable()) defaults", '
+                 'Matrix_Similarity("A", "G", DnaTable()), -1')
+    return lines
+
+
+def helper_lines(names):
+    """Private functions building the 2-D tables the tests pass to Matrix."""
+    lines = []
+    for name in names:
+        for func, table in HELPERS.get(name, []):
+            lines += ["", f"Private Function {func}() As Variant", "    Dim t() As Variant",
+                      f"    ReDim t(1 To {len(table)}, 1 To 3)"]
+            for r, (a, b, v) in enumerate(table, 1):
+                lines.append(f'    t({r}, 1) = "{a}": t({r}, 2) = "{b}": t({r}, 3) = {v}')
+            lines += [f"    {func} = t", "End Function"]
+    return lines
+
+
 def module(test_name, names):
     sub = "Test_" + test_name[:-len("Tests")]
     body = []
     for name in names:
-        body += checks_for(name, seed=sum(map(ord, name)))
+        body += matrix_checks() if name == "Matrix" else checks_for(name, seed=sum(map(ord, name)))
     # Keep each procedure well under VBA's 64KB "Procedure too large" limit
     chunks = [body[i:i + 100] for i in range(0, len(body), 100)]
     parts = []
@@ -176,6 +247,7 @@ def module(test_name, names):
         f'    Debug.Print "{sub[5:]}: " & mPass & " passed, " & mFail & " failed"',
         "End Sub",
         *parts,
+        *helper_lines(names),
         "",
         "Private Sub CheckL(ByVal Name As String, ByVal Actual As Long, ByVal Expected As Long)",
         "    If Actual = Expected Then",
@@ -204,6 +276,8 @@ def module(test_name, names):
         "    End If",
         "End Sub",
     ]
+    size = sum(len(l) + 2 for l in lines)
+    assert size < 150_000, f"{test_name} is {size} bytes; split it (large modules fail to load)"
     too_long = [l for l in lines if len(l) > 1000]
     assert not too_long, f"VBA lines are limited to 1023 characters: {too_long[0][:80]}"
     return "\r\n".join(lines) + "\r\n"
