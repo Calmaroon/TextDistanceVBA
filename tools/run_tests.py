@@ -49,6 +49,11 @@ UDF_FORMULAS = [
     ('=DAMERAU_LEVENSHTEIN("ca";"abc")', 3), ('=DAMERAU_LEVENSHTEIN("ca";"abc";1;0)', 2),
     ('=JARO(A1;B1)', 0.9444444444444445), ('=JARO_DIST(A1;B1)', 0.0555555555555555),
     ('=JARO_WINKLER(A1;B1)', 0.9611111111111111), ('=JARO_WINKLER_DIST(A1;B1)', 0.0388888888888889),
+    ('=LCSSEQ("test";"text")', "tet"), ('=LCSSEQ_SIM("test";"text")', 3),
+    ('=LCSSEQ_NDIST("test";"text")', 0.25), ('=LCSSTR("test";"text")', "te"),
+    ('=LCSSTR_DIST(A1;B1)', 3), ('=LCSSTR("ABC";"zbc";0)', "bc"),
+    ('=RATCLIFF_OBERSHELP("WIKIMEDIA";"WIKIMANIA")', 7 / 9),
+    ('=RATCLIFF_OBERSHELP_DIST("WIKIMEDIA";"WIKIMANIA")', 2 / 9),
 ]
 
 
@@ -66,7 +71,11 @@ def check_udfs(doc):
     failures = 0
     for row, (formula, expected) in enumerate(UDF_FORMULAS):
         cell = sheet.getCellByPosition(3, row)
-        if cell.getError() or abs(cell.Value - expected) > 1e-9:
+        if isinstance(expected, str):
+            ok = not cell.getError() and cell.String == expected
+        else:
+            ok = not cell.getError() and abs(cell.Value - expected) <= 1e-9
+        if not ok:
             failures += 1
             print(f"FAIL {formula}: got {cell.String}, expected {expected}")
     print(f"Excel UDFs: {len(UDF_FORMULAS) - failures} passed, {failures} failed")

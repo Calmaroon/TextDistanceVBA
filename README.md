@@ -18,6 +18,9 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Levenshtein | `Levenshtein.bas` | Done |
 | Damerau-Levenshtein | `DamerauLevenshtein.bas` | Done |
 | Jaro, Jaro-Winkler | `JaroWinkler.bas` | Done |
+| Longest common subsequence (LCSSeq) | `LCSSeq.bas` | Done |
+| Longest common substring (LCSStr) | `LCSStr.bas` | Done |
+| Ratcliff-Obershelp | `RatcliffObershelp.bas` | Done |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -68,6 +71,23 @@ Debug.Print Jaro_Similarity("martha", "marhta")          ' 0.944...
 Debug.Print JaroWinkler_Similarity("martha", "marhta")   ' 0.961...
 ```
 
+### LCSSeq and LCSStr
+Longest common subsequence (characters in the same order, gaps allowed) and longest common substring (consecutive characters). Similarity is the length of the match; `Distance = Maximum - Similarity`. `LCSSeq_Sequence` and `LCSStr_Substring` return the matching text itself, picking the same one as Python when there are several. Optional argument: `CaseSensitive`.
+
+```vba
+Debug.Print LCSSeq_Sequence("test", "text")      ' tet
+Debug.Print LCSSeq_Similarity("test", "text")    ' 3
+Debug.Print LCSStr_Substring("test", "text")     ' te
+Debug.Print LCSStr_Similarity("test", "text")    ' 2
+```
+
+### Ratcliff-Obershelp
+Gestalt pattern matching, the idea behind Python's `difflib.SequenceMatcher.ratio()`. Similarity from 0 to 1, `Distance = 1 - Similarity`. Optional argument: `CaseSensitive`.
+
+```vba
+Debug.Print RatcliffObershelp_Similarity("WIKIMEDIA", "WIKIMANIA")   ' 0.777...
+```
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -85,6 +105,12 @@ With `Excel_UDF.bas` imported:
 | `=JARO_DIST(...)` | `Jaro_Distance` |
 | `=JARO_WINKLER(A1, B1, [CaseSensitive], [LongTolerance], [PrefixWeight])` | `JaroWinkler_Similarity` |
 | `=JARO_WINKLER_DIST(...)` | `JaroWinkler_Distance` |
+| `=LCSSEQ(A1, B1, [CaseSensitive])` | `LCSSeq_Sequence` (returns text) |
+| `=LCSSEQ_SIM(...)`, `_DIST`, `_NDIST`, `_NSIM` | `LCSSeq_*` |
+| `=LCSSTR(A1, B1, [CaseSensitive])` | `LCSStr_Substring` (returns text) |
+| `=LCSSTR_SIM(...)`, `_DIST`, `_NDIST`, `_NSIM` | `LCSStr_*` |
+| `=RATCLIFF_OBERSHELP(A1, B1, [CaseSensitive])` | `RatcliffObershelp_Similarity` |
+| `=RATCLIFF_OBERSHELP_DIST(...)` | `RatcliffObershelp_Distance` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 

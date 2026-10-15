@@ -29,6 +29,16 @@ CASE_INSENSITIVE_CASES = [("Hello", "hello"), ("TeSt", "tEXT"), ("ABC", "abcd"),
                           ("MARTHA", "marhta"), ("Kitten", "SITTING")]
 
 
+def long_cases(seed):
+    """Strings of 200+ characters, where textdistance.LCSStr switches algorithm."""
+    rng = random.Random(seed)
+    word = lambda n, alphabet: "".join(rng.choice(alphabet) for _ in range(n))
+    return [(word(n1, al), word(n2, al)) for n1, n2, al in (
+        (210, 230, "ab"), (230, 210, "ab"), (205, 199, "abc"), (150, 190, "abcd"),
+        (240, 220, "abcd"), (220, 240, "abcdefgh"), (260, 201, "ab"), (300, 250, "abc"),
+        (250, 230, "abcdef"), (330, 290, "abcd"))]
+
+
 def random_cases(seed, count=25):
     rng = random.Random(seed)
     word = lambda: "".join(rng.choice("abcd") for _ in range(rng.randint(1, 9)))
@@ -56,7 +66,15 @@ ALGORITHMS = {
         ("False", td.JaroWinkler(long_tolerance=False, external=False)),
         ("True", td.JaroWinkler(long_tolerance=True, external=False)),
     ], False),
+    "LCSSeq": ("LCSSeq", [("", td.LCSSeq(external=False))], True),
+    "LCSStr": ("LCSStr", [("", td.LCSStr(external=False))], True),
+    "RatcliffObershelp": ("RatcliffObershelp", [("", td.RatcliffObershelp(external=False))], False),
 }
+
+# Extra string-returning functions: name -> VBA suffix (Python: algo(a, b))
+STRING_FUNCS = {"LCSSeq": "Sequence", "LCSStr": "Substring"}
+# Algorithms also tested on 200+ character strings
+LONG_CASE_ALGOS = {"LCSSeq", "LCSStr", "RatcliffObershelp"}
 
 # Which test module each algorithm's tests go into
 TEST_FILES = {
@@ -64,6 +82,9 @@ TEST_FILES = {
     "LevenshteinTests": ["Levenshtein"],
     "DamerauLevenshteinTests": ["DamerauLevenshtein"],
     "JaroWinklerTests": ["Jaro", "JaroWinkler"],
+    "LCSSeqTests": ["LCSSeq"],
+    "LCSStrTests": ["LCSStr"],
+    "RatcliffObershelpTests": ["RatcliffObershelp"],
 }
 
 
@@ -87,14 +108,21 @@ def vba_num(x):
     return repr(int(x)) if float(x).is_integer() else repr(float(x))
 
 
+def short_repr(s, limit=24):
+    return repr(s) if len(s) <= limit else repr(s[:limit]) + f"...({len(s)} chars)"
+
+
 def checks_for(name, seed):
     prefix, variants, integer = ALGORITHMS[name]
     check = "CheckL" if integer else "CheckD"
+    cases = COMMON_CASES + random_cases(seed)
+    if name in LONG_CASE_ALGOS:
+        cases += long_cases(seed)
     lines = []
     for extra, algo in variants:
-        for a, b in COMMON_CASES + random_cases(seed):
+        for a, b in cases:
             args = f"{vba_str(a)}, {vba_str(b)}, True" + (f", {extra}" if extra else "")
-            label = f"{prefix}({a!r}, {b!r}{', ' + extra if extra else ''})"
+            label = f"{prefix}({short_repr(a)}, {short_repr(b)}{', ' + extra if extra else ''})"
             for func, value, chk in (
                 ("Distance", algo.distance(a, b), check),
                 ("Similarity", algo.similarity(a, b), check),
@@ -103,13 +131,21 @@ def checks_for(name, seed):
             ):
                 lines.append(f'    {chk} {vba_str(label + " " + func)}, '
                              f"{prefix}_{func}({args}), {vba_num(value)}")
+            if name in STRING_FUNCS:
+                func = STRING_FUNCS[name]
+                lines.append(f'    CheckS {vba_str(label + " " + func)}, '
+                             f"{prefix}_{func}({args}), {vba_str(algo(a, b))}")
     # CaseSensitive:=False is a VBA addition: compare with Python on lowercased input
     extra, algo = variants[0]
     for a, b in CASE_INSENSITIVE_CASES:
         args = f"{vba_str(a)}, {vba_str(b)}, False" + (f", {extra}" if extra else "")
-        label = f"{prefix}({a!r}, {b!r}, CaseSensitive=False) Distance"
-        lines.append(f"    {check} {vba_str(label)}, {prefix}_Distance({args}), "
+        label = f"{prefix}({a!r}, {b!r}, CaseSensitive=False)"
+        lines.append(f"    {check} {vba_str(label + ' Distance')}, {prefix}_Distance({args}), "
                      f"{vba_num(algo.distance(a.lower(), b.lower()))}")
+        if name in STRING_FUNCS:
+            func = STRING_FUNCS[name]
+            lines.append(f"    CheckS {vba_str(label + ' ' + func)}, {prefix}_{func}({args}), "
+                         f"{vba_str(algo(a.lower(), b.lower()))}")
     lines.append(f'    CheckD "{prefix}_Maximum", {prefix}_Maximum("test", "testing"), '
                  f'{vba_num(variants[0][1].maximum("test", "testing"))}')
     return lines
@@ -150,6 +186,15 @@ def module(test_name, names):
         "    End If",
         "End Sub",
         "",
+        "Private Sub CheckS(ByVal Name As String, ByVal Actual As String, ByVal Expected As String)",
+        "    If StrComp(Actual, Expected, vbBinaryCompare) = 0 Then",
+        "        mPass = mPass + 1",
+        "    Else",
+        "        mFail = mFail + 1",
+        '        Debug.Print "FAIL " & Name & ": got """ & Actual & """, expected """ & Expected & """"',
+        "    End If",
+        "End Sub",
+        "",
         "Private Sub CheckD(ByVal Name As String, ByVal Actual As Double, ByVal Expected As Double)",
         "    If Abs(Actual - Expected) < 0.000000001 Then",
         "        mPass = mPass + 1",
@@ -159,6 +204,8 @@ def module(test_name, names):
         "    End If",
         "End Sub",
     ]
+    too_long = [l for l in lines if len(l) > 1000]
+    assert not too_long, f"VBA lines are limited to 1023 characters: {too_long[0][:80]}"
     return "\r\n".join(lines) + "\r\n"
 
 
