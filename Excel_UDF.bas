@@ -9,7 +9,8 @@ Attribute VB_Name = "modExcelUDF"
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
 ' textdistance.<name>(a, b): a distance for edit distances, a similarity for
-' Jaro / Jaro-Winkler.
+' Jaro / Jaro-Winkler / Ratcliff-Obershelp, and the matching text itself for
+' LCSSEQ / LCSSTR.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
 '           =LEVENSHTEIN_NSIM(A2, B2, FALSE) -> case-insensitive similarity 0..1
@@ -116,4 +117,64 @@ Public Function JARO_WINKLER_DIST(ByVal Text1 As String, ByVal Text2 As String, 
                                   Optional ByVal LongTolerance As Boolean = False, _
                                   Optional ByVal PrefixWeight As Double = 0.1) As Double
     JARO_WINKLER_DIST = JaroWinkler_Distance(Text1, Text2, CaseSensitive, LongTolerance, PrefixWeight)
+End Function
+
+Public Function LCSSEQ(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True) As String
+    LCSSEQ = LCSSeq_Sequence(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSEQ_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True) As Long
+    LCSSEQ_SIM = LCSSeq_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSEQ_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Long
+    LCSSEQ_DIST = LCSSeq_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSEQ_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Double
+    LCSSEQ_NDIST = LCSSeq_NormalizedDistance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSEQ_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    LCSSEQ_NSIM = LCSSeq_NormalizedSimilarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSTR(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True) As String
+    LCSSTR = LCSStr_Substring(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSTR_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True) As Long
+    LCSSTR_SIM = LCSStr_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSTR_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Long
+    LCSSTR_DIST = LCSStr_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSTR_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True) As Double
+    LCSSTR_NDIST = LCSStr_NormalizedDistance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function LCSSTR_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    LCSSTR_NSIM = LCSStr_NormalizedSimilarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function RATCLIFF_OBERSHELP(ByVal Text1 As String, ByVal Text2 As String, _
+                                   Optional ByVal CaseSensitive As Boolean = True) As Double
+    RATCLIFF_OBERSHELP = RatcliffObershelp_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function RATCLIFF_OBERSHELP_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                        Optional ByVal CaseSensitive As Boolean = True) As Double
+    RATCLIFF_OBERSHELP_DIST = RatcliffObershelp_Distance(Text1, Text2, CaseSensitive)
 End Function
