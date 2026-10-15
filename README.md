@@ -23,6 +23,7 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Ratcliff-Obershelp | `RatcliffObershelp.bas` | Done |
 | Prefix, Postfix, Length, Identity, Matrix | `Simple.bas` | Done |
 | MRA, Editex | `Phonetic.bas` | Done |
+| Cosine, Jaccard, Sorensen-Dice, Tversky, Overlap, Tanimoto, Monge-Elkan, Bag | `TokenBased.bas` | Done |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -118,6 +119,37 @@ Debug.Print MRA_Similarity("Byrne", "Boern")    ' 1
 Debug.Print Editex_Distance("Byrne", "Boern")   ' 4
 ```
 
+### Token-based measures (`TokenBased.bas`)
+Each string is split into tokens and the two bags of tokens are compared. "Shared" counts a token as often as it appears in both strings.
+
+| Measure | Similarity | Range |
+|---|---|---|
+| Cosine (Ochiai) | `shared / Sqr(tokens1 * tokens2)` | 0 .. 1 |
+| Jaccard | `shared / all tokens` | 0 .. 1 |
+| Sorensen (Sorensen-Dice) | `2 * shared / (tokens1 + tokens2)` | 0 .. 1 |
+| Tversky | `shared / (shared + Alpha * only-in-s1 + Beta * only-in-s2)` | 0 .. 1 |
+| Overlap | `shared / tokens in the smaller bag` | 0 .. 1 |
+| Tanimoto | `Log2(Jaccard)` | `NEG_INF` .. 0 |
+| Monge-Elkan | average best Damerau-Levenshtein similarity per token (see below) | 0 .. 2 |
+| Bag | **distance**: tokens left over in the bigger bag | 0 .. longer length |
+
+Common optional arguments: `CaseSensitive`, `Qval` (what a token is: `1` = characters (default), `2`+ = overlapping groups of that many characters, `0` = words separated by whitespace) and `AsSet` (default `False`; `True` counts each distinct token once). Monge-Elkan has `Symmetric` instead of `AsSet`, and Bag has no `AsSet`. Tversky also takes `Alpha`, `Beta` (default 1, 1) and an optional `Bias`.
+
+```vba
+Debug.Print Cosine_Similarity("nelson", "neilsen")                 ' 0.771...
+Debug.Print Cosine_Similarity("Smith John", "John Smith", True, 0) ' 1 (by words)
+Debug.Print Jaccard_Similarity("night", "nacht", True, 2)          ' 0.142... (letter pairs)
+Debug.Print Overlap_Similarity("John Smith", "Smith", True, 0)     ' 1
+Debug.Print Bag_Distance("abc", "abd")                             ' 1
+```
+
+These follow textdistance exactly, including some quirks:
+
+- **Monge-Elkan** divides by the number of tokens twice and uses raw (not normalized) Damerau-Levenshtein similarity, so word comparisons can exceed 1; its maximum is always 2 and identical strings give 2.
+- **Tanimoto** is minus infinity when nothing is shared. VBA has no infinity, so the module returns `NEG_INF` (-1.79769313486231E+308, the most negative Double) and `-NEG_INF` for plus infinity.
+- **Bag**'s maximum is the longer string's length in characters, even when comparing words.
+- When a non-empty string has no tokens (e.g. `"a"` with `Qval` 2), Python raises an error; this port returns a similarity of 0.
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -149,6 +181,11 @@ With `Excel_UDF.bas` imported:
 | `=MRACODEX(A1)` | `MRA_Codex` (returns text) |
 | `=MRA(A1, B1)`, `_DIST`, `_NDIST`, `_NSIM` | `MRA_*` |
 | `=EDITEX(A1, B1, [LocalMode], [MatchCost], [GroupCost], [MismatchCost])`, `_SIM`, `_NDIST`, `_NSIM` | `Editex_*` |
+| `=COSINE(A1, B1, [CaseSensitive], [Qval], [AsSet])`, `=COSINE_DIST(...)` | `Cosine_Similarity`, `Cosine_Distance` |
+| `=JACCARD(...)`, `=SORENSEN(...)`, `=OVERLAP(...)`, `=TANIMOTO(...)` and their `_DIST` versions (same arguments as `COSINE`) | `*_Similarity`, `*_Distance` |
+| `=TVERSKY(A1, B1, [CaseSensitive], [Qval], [AsSet], [Alpha], [Beta], [Bias])`, `=TVERSKY_DIST(...)` | `Tversky_Similarity`, `Tversky_Distance` |
+| `=MONGE_ELKAN(A1, B1, [CaseSensitive], [Qval], [Symmetric])`, `=MONGE_ELKAN_DIST(...)` | `MongeElkan_Similarity`, `MongeElkan_Distance` |
+| `=BAG(A1, B1, [CaseSensitive], [Qval])`, `_SIM`, `_NDIST`, `_NSIM` | `Bag_*` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 

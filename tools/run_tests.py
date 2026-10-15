@@ -66,6 +66,16 @@ UDF_FORMULAS = [
     ('=MRACODEX("Catherine")', "CTHRN"), ('=MRA("Byrne";"Boern")', 1),
     ('=MRA_DIST("Smith";"Smyth")', 3), ('=EDITEX("Byrne";"Boern")', 4),
     ('=EDITEX_NSIM("Smith";"smith")', 1),
+    ('=COSINE("nelson";"neilsen")', 0.7715167498104595), ('=COSINE("Smith John";"John Smith";1;0)', 1),
+    ('=COSINE_DIST("Smith John";"john smith";0;0)', 0),
+    ('=JACCARD("night";"nacht")', 0.42857142857142855),
+    ('=SORENSEN("night";"nacht";1;2)', 0.25),
+    ('=OVERLAP("John Smith";"Smith";1;0)', 1.0),
+    ('=TANIMOTO_DIST("ab";"ac")', 2.584962500721156),
+    ('=TVERSKY("test";"text";1;1;0;0.5;2)', 0.5454545454545454),
+    ('=TVERSKY("test";"text";1;1;0;1;1;1)', 0.5),
+    ('=MONGE_ELKAN("hello world";"hello word";1;0)', 2.25),
+    ('=BAG("abc";"abd")', 1),
 ]
 
 

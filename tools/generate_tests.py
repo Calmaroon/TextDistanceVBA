@@ -82,6 +82,59 @@ ALGORITHMS = {
     ], True),
 }
 
+def no_zero_division(cls, fallback=0.0):
+    """textdistance class whose ZeroDivisionError (a string with no tokens) gives
+    `fallback` instead, as the VBA port does."""
+    class Safe(cls):
+        def __call__(self, *sequences):
+            try:
+                return super().__call__(*sequences)
+            except ZeroDivisionError:
+                return fallback
+    Safe.__name__ = cls.__name__
+    return Safe
+
+
+Cosine = no_zero_division(td.Cosine)
+Jaccard = no_zero_division(td.Jaccard)
+Sorensen = no_zero_division(td.Sorensen)
+Overlap = no_zero_division(td.Overlap)
+Tversky = no_zero_division(td.Tversky)
+Tanimoto = no_zero_division(td.Tanimoto, float("-inf"))  # Log2 of Jaccard's 0
+
+
+def token_variants(cls):
+    """Qval / AsSet combinations: chars, words, bigrams, then the AsSet versions."""
+    return [(f"{vq}, {s}", cls(qval=q, as_set=s, external=False)) for vq, q, s in (
+        (1, 1, False), (0, None, False), (2, 2, False), (1, 1, True), (0, None, True), (3, 3, False))]
+
+
+for _name, _cls in (("Cosine", Cosine), ("Jaccard", Jaccard), ("Sorensen", Sorensen),
+                    ("Overlap", Overlap), ("Tanimoto", Tanimoto)):
+    ALGORITHMS[_name] = (_name, token_variants(_cls), False)
+ALGORITHMS["Tversky"] = ("Tversky", [
+    ("1, False, 1, 1", Tversky(qval=1, ks=[1, 1], external=False)),
+    ("0, False, 0.5, 2", Tversky(qval=None, ks=[0.5, 2], external=False)),
+    ("1, True, 0.5, 0.5", Tversky(qval=1, ks=[0.5, 0.5], as_set=True, external=False)),
+    ("1, False, 1, 1, 1", Tversky(qval=1, ks=[1, 1], bias=1, external=False)),
+    ("2, False, 0.25, 3, 0.5", Tversky(qval=2, ks=[0.25, 3], bias=0.5, external=False)),
+], False)
+ALGORITHMS["MongeElkan"] = ("MongeElkan", [
+    (f"{vq}, {sym}", td.MongeElkan(qval=q, symmetric=sym, external=False)) for vq, q, sym in (
+        (1, 1, False), (0, None, False), (2, 2, False), (1, 1, True), (0, None, True))
+], False)
+ALGORITHMS["Bag"] = ("Bag", [
+    ("1", td.Bag(qval=1, external=False)), ("0", td.Bag(qval=None, external=False)),
+    ("2", td.Bag(qval=2, external=False)),
+], True)
+
+WORD_CASES = [("the quick brown fox", "the lazy brown dog"), ("Smith John", "John Smith"),
+              ("a b c a", "a a d"), ("tab\tseparated words", "tab separated  words"),
+              ("  leading", "leading  "), ("New York City", "new york"),
+              ("line\nbreak", "line break"), ("no\u00a0break space", "no break space"),
+              ("wide\u3000space", "wide space"), ("   ", "abc"), ("aab", "abb"),
+              ("nelson", "neilsen"), ("one two two three", "two two two")]
+
 # Algorithms that always ignore case (no CaseSensitive argument)
 NO_CASE_ARG = {"MRA", "Editex"}
 # Extra cases for particular algorithms
@@ -91,6 +144,8 @@ NAME_CASES = [("Byrne", "Boern"), ("Smith", "Smyth"), ("Catherine", "Kathryn"),
               ("Williams", "Wiliams"), ("Hawthorne", "Hathorn"), ("Shackleford", "Shackelford"),
               ("Bartholomew", "Bart"), ("O'Brien", "OBrien"), ("Mc Donald", "MacDonald")]
 EXTRA_CASES = {"MRA": NAME_CASES, "Editex": NAME_CASES}
+for _name in ("Cosine", "Jaccard", "Sorensen", "Tversky", "Overlap", "Tanimoto", "MongeElkan", "Bag"):
+    EXTRA_CASES[_name] = WORD_CASES
 
 # Matrix takes a lookup table instead of the usual arguments; see matrix_checks
 DNA_TABLE = [("A", "A", 10), ("G", "G", 7), ("C", "C", 9), ("T", "T", 8),
@@ -121,14 +176,22 @@ TEST_FILES = {
     "MatrixTests": ["Matrix"],
     "MRATests": ["MRA"],
     "EditexTests": ["Editex"],
+    "CosineTests": ["Cosine"],
+    "JaccardTests": ["Jaccard"],
+    "SorensenTests": ["Sorensen"],
+    "TverskyTests": ["Tversky"],
+    "OverlapTests": ["Overlap"],
+    "TanimotoTests": ["Tanimoto"],
+    "MongeElkanTests": ["MongeElkan"],
+    "BagTests": ["Bag"],
 }
 
 
 def vba_str(s):
-    """VBA expression for s, using ChrW() for non-ASCII characters."""
+    """VBA expression for s, using ChrW() for control and non-ASCII characters."""
     parts, buf = [], ""
     for ch in s:
-        if ord(ch) < 128:
+        if 32 <= ord(ch) < 127:
             buf += ch
         else:
             if buf:
@@ -141,6 +204,9 @@ def vba_str(s):
 
 
 def vba_num(x):
+    if x in (float("inf"), float("-inf")):
+        # VBA has no infinity; the port uses the largest Doubles (modTokenBased.NEG_INF)
+        return "1.79769313486231E+308" if x > 0 else "-1.79769313486231E+308"
     return repr(int(x)) if float(x).is_integer() else repr(float(x))
 
 
