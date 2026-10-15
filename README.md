@@ -21,6 +21,8 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Longest common subsequence (LCSSeq) | `LCSSeq.bas` | Done |
 | Longest common substring (LCSStr) | `LCSStr.bas` | Done |
 | Ratcliff-Obershelp | `RatcliffObershelp.bas` | Done |
+| Prefix, Postfix, Length, Identity, Matrix | `Simple.bas` | Done |
+| MRA, Editex | `Phonetic.bas` | Done |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -88,6 +90,34 @@ Gestalt pattern matching, the idea behind Python's `difflib.SequenceMatcher.rati
 Debug.Print RatcliffObershelp_Similarity("WIKIMEDIA", "WIKIMANIA")   ' 0.777...
 ```
 
+### Simple measures (`Simple.bas`)
+| Measure | Similarity | Example |
+|---|---|---|
+| Prefix | Length of the common start | `Prefix_CommonPrefix("test", "text")` = `"te"` |
+| Postfix | Length of the common end | `Postfix_CommonPostfix("ring", "sing")` = `"ing"` |
+| Length | Length of the shorter string (distance = difference in length) | `Length_Distance("test", "testing")` = 3 |
+| Identity | 1 if identical, else 0 | `Identity_Similarity("a", "a")` = 1 |
+| Matrix | Score looked up in a table | see below |
+
+`Matrix_Similarity(s1, s2, [Table], [MismatchCost], [MatchCost], [Symmetric], [CaseSensitive])` looks the pair up in `Table`, a 2-D array or Excel range with 3 columns (string 1, string 2, score). With `Symmetric` (default `True`) it also tries `(s2, s1)`. If the pair isn't found it returns `MatchCost` (default 1) when the strings are equal, else `MismatchCost` (default 0). If a pair appears more than once, the last row wins. The maximum is `MatchCost`.
+
+```vba
+' Table in E1:G3:  A | A | 10,  A | G | -1,  G | G | 7
+Debug.Print Matrix_Similarity("G", "A", Range("E1:G3"))   ' -1 (symmetric lookup)
+```
+
+### Phonetic measures (`Phonetic.bas`)
+Both compare upper-cased text, so they are always case-insensitive and have no `CaseSensitive` argument.
+
+- **MRA** (Match Rating Approach, the Western Airlines surname-matching method). Each name becomes a short codex: vowels after the first letter are removed, repeated letters collapsed, and anything over 6 characters is cut to the first 3 + last 3. `MRA_Similarity` compares the codexes (0 to `MRA_Maximum`, the longer codex length), and is 0 when the codex lengths differ by more than 2.
+- **Editex** is an edit distance where replacing letters from the same sound group (vowels, B/P, C/K/Q, D/T, L/R, M/N, G/J, F/P/V, S/X/Z, C/S/Z) costs less than unrelated letters. Optional arguments: `LocalMode` (default `False`), `MatchCost` (0), `GroupCost` (1), `MismatchCost` (2). The maximum is the longer length times `MismatchCost`.
+
+```vba
+Debug.Print MRA_Codex("Catherine")              ' CTHRN
+Debug.Print MRA_Similarity("Byrne", "Boern")    ' 1
+Debug.Print Editex_Distance("Byrne", "Boern")   ' 4
+```
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -111,6 +141,14 @@ With `Excel_UDF.bas` imported:
 | `=LCSSTR_SIM(...)`, `_DIST`, `_NDIST`, `_NSIM` | `LCSStr_*` |
 | `=RATCLIFF_OBERSHELP(A1, B1, [CaseSensitive])` | `RatcliffObershelp_Similarity` |
 | `=RATCLIFF_OBERSHELP_DIST(...)` | `RatcliffObershelp_Distance` |
+| `=PREFIX(A1, B1, [CaseSensitive])`, `=POSTFIX(...)` | Common prefix / postfix (returns text) |
+| `=PREFIX_SIM(...)`, `_DIST`, `_NDIST`, `_NSIM` (same for `POSTFIX`) | `Prefix_*`, `Postfix_*` |
+| `=LENGTH(A1, B1)`, `_SIM`, `_NDIST`, `_NSIM` | `Length_*` |
+| `=IDENTITY(A1, B1, [CaseSensitive])`, `=IDENTITY_DIST(...)` | `Identity_Similarity`, `Identity_Distance` |
+| `=MATRIX(A1, B1, [Table], [MismatchCost], [MatchCost], [Symmetric], [CaseSensitive])`, `=MATRIX_DIST(...)` | `Matrix_Similarity`, `Matrix_Distance` |
+| `=MRACODEX(A1)` | `MRA_Codex` (returns text) |
+| `=MRA(A1, B1)`, `_DIST`, `_NDIST`, `_NSIM` | `MRA_*` |
+| `=EDITEX(A1, B1, [LocalMode], [MatchCost], [GroupCost], [MismatchCost])`, `_SIM`, `_NDIST`, `_NSIM` | `Editex_*` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 
