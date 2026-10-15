@@ -120,9 +120,19 @@ Public Sub Test_Hamming()
 End Sub
 
 Private Sub CheckL(ByVal Name As String, ByVal Actual As Long, ByVal Expected As Long)
-    If Actual = Expected Then mPass = mPass + 1 Else mFail = mFail + 1: Debug.Print "FAIL " & Name & ": got " & Actual & ", expected " & Expected
+    If Actual = Expected Then
+        mPass = mPass + 1
+    Else
+        mFail = mFail + 1
+        Debug.Print "FAIL " & Name & ": got " & Actual & ", expected " & Expected
+    End If
 End Sub
 
 Private Sub CheckD(ByVal Name As String, ByVal Actual As Double, ByVal Expected As Double)
-    If Abs(Actual - Expected) < 0.000000001 Then mPass = mPass + 1 Else mFail = mFail + 1: Debug.Print "FAIL " & Name & ": got " & Actual & ", expected " & Expected
+    If Abs(Actual - Expected) < 0.000000001 Then
+        mPass = mPass + 1
+    Else
+        mFail = mFail + 1
+        Debug.Print "FAIL " & Name & ": got " & Actual & ", expected " & Expected
+    End If
 End Sub
