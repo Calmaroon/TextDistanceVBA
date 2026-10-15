@@ -420,9 +420,7 @@ Private Function ArithSize(ByVal data As String, ByVal LogBase As Double) As Lon
     ReDim bits(0 To 0)
     k = 0
     Do
-        BigCopy r, tmp
-        BigAdd tmp, Wk
-        If BigCmp(D, tmp) < 0 Then Exit Do
+        If SumExceeds(r, Wk, D) Then Exit Do
         BigMulSmall r, 2
         BigMulSmall Wk, 2
         k = k + 1
@@ -596,6 +594,31 @@ Private Sub BigSub(a() As Double, b() As Double)
         End If
     Next i
 End Sub
+
+' True if a + b > c, without allocating: compares from the most significant
+' digit, tracking how far ahead or behind the partial sum is.
+Private Function SumExceeds(a() As Double, b() As Double, c() As Double) As Boolean
+    Dim i As Long, top As Long, diff As Double, x As Double
+    top = UBound(a)
+    If UBound(b) > top Then top = UBound(b)
+    If UBound(c) > top Then top = UBound(c)
+    ' diff = (a + b - c) restricted to the digits seen so far, in units of the
+    ' current digit; once it is >= 2 or <= -2 no lower digits can change the sign
+    For i = top To 0 Step -1
+        x = 0
+        If i <= UBound(a) Then x = x + a(i)
+        If i <= UBound(b) Then x = x + b(i)
+        If i <= UBound(c) Then x = x - c(i)
+        diff = diff * LIMB + x
+        If diff >= 2 Then
+            SumExceeds = True
+            Exit Function
+        ElseIf diff <= -2 Then
+            Exit Function
+        End If
+    Next i
+    SumExceeds = diff > 0
+End Function
 
 ' -1, 0 or 1 as a <, = or > b.
 Private Function BigCmp(a() As Double, b() As Double) As Long

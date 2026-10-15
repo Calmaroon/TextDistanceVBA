@@ -222,6 +222,9 @@ HELPERS = {"Matrix": [("DnaTable", DNA_TABLE), ("DupTable", DUP_TABLE)]}
 STRING_FUNCS = {"LCSSeq": "Sequence", "LCSStr": "Substring",
                 "Prefix": "CommonPrefix", "Postfix": "CommonPostfix"}
 # Algorithms also tested on 200+ character strings
+# ArithNCD's big-number arithmetic is slow in LibreOffice: use three long cases,
+# covering numerators over 53 bits and over 2^1024 (beyond a Double)
+LONG_CASE_PICK = {"ArithNCD": {1, 2, 5}}
 LONG_CASE_ALGOS = {"LCSSeq", "LCSStr", "RatcliffObershelp",
                    "ArithNCD", "RLENCD", "BWTRLENCD"}
 
@@ -294,7 +297,8 @@ def checks_for(name, seed):
     check = "CheckL" if integer else "CheckD"
     cases = COMMON_CASES + random_cases(seed)
     if name in LONG_CASE_ALGOS:
-        cases += long_cases(seed)
+        picked = LONG_CASE_PICK.get(name)
+        cases += [c for i, c in enumerate(long_cases(seed)) if picked is None or i in picked]
     cases += EXTRA_CASES.get(name, [])
     cs_arg = "" if name in NO_CASE_ARG else ", True"
     lines = []
