@@ -8,10 +8,11 @@ Attribute VB_Name = "modExcelUDF"
 ' error values without calling the function.
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
-' textdistance.<name>(a, b): a distance for edit distances and Bag, a
-' similarity for Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix /
-' MRA and the token measures (Cosine, Jaccard, ...), and the matching text
-' itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
+' textdistance.<name>(a, b): a distance for edit distances, Bag and the
+' compression measures (..._NCD), a similarity for Jaro / Jaro-Winkler /
+' StrCmp95 / MLIPNS / the alignment scores / Ratcliff-Obershelp / Identity /
+' Matrix / MRA and the token measures (Cosine, Jaccard, ...), and the
+' matching text itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
 '           =LEVENSHTEIN_NSIM(A2, B2, FALSE) -> case-insensitive similarity 0..1
@@ -460,4 +461,170 @@ Public Function BAG_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
                          Optional ByVal CaseSensitive As Boolean = True, _
                          Optional ByVal Qval As Long = 1) As Double
     BAG_NSIM = Bag_NormalizedSimilarity(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function STRCMP95(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal LongStrings As Boolean = False) As Double
+    STRCMP95 = StrCmp95_Similarity(Text1, Text2, LongStrings)
+End Function
+
+Public Function STRCMP95_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal LongStrings As Boolean = False) As Double
+    STRCMP95_DIST = StrCmp95_Distance(Text1, Text2, LongStrings)
+End Function
+
+Public Function NEEDLEMAN_WUNSCH(ByVal Text1 As String, ByVal Text2 As String, _
+                                 Optional ByVal CaseSensitive As Boolean = True, _
+                                 Optional ByVal Qval As Long = 1, _
+                                 Optional ByVal GapCost As Double = 1) As Double
+    NEEDLEMAN_WUNSCH = NeedlemanWunsch_Similarity(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function NEEDLEMAN_WUNSCH_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                      Optional ByVal CaseSensitive As Boolean = True, _
+                                      Optional ByVal Qval As Long = 1, _
+                                      Optional ByVal GapCost As Double = 1) As Double
+    NEEDLEMAN_WUNSCH_DIST = NeedlemanWunsch_Distance(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function NEEDLEMAN_WUNSCH_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                                      Optional ByVal CaseSensitive As Boolean = True, _
+                                      Optional ByVal Qval As Long = 1, _
+                                      Optional ByVal GapCost As Double = 1) As Double
+    NEEDLEMAN_WUNSCH_NSIM = NeedlemanWunsch_NormalizedSimilarity(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function NEEDLEMAN_WUNSCH_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                       Optional ByVal CaseSensitive As Boolean = True, _
+                                       Optional ByVal Qval As Long = 1, _
+                                       Optional ByVal GapCost As Double = 1) As Double
+    NEEDLEMAN_WUNSCH_NDIST = NeedlemanWunsch_NormalizedDistance(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function GOTOH(ByVal Text1 As String, ByVal Text2 As String, _
+                      Optional ByVal CaseSensitive As Boolean = True, _
+                      Optional ByVal Qval As Long = 1, _
+                      Optional ByVal GapOpen As Double = 1, _
+                      Optional ByVal GapExt As Double = 0.4) As Double
+    GOTOH = Gotoh_Similarity(Text1, Text2, CaseSensitive, Qval, GapOpen, GapExt)
+End Function
+
+Public Function GOTOH_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True, _
+                           Optional ByVal Qval As Long = 1, _
+                           Optional ByVal GapOpen As Double = 1, _
+                           Optional ByVal GapExt As Double = 0.4) As Double
+    GOTOH_DIST = Gotoh_Distance(Text1, Text2, CaseSensitive, Qval, GapOpen, GapExt)
+End Function
+
+Public Function GOTOH_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True, _
+                           Optional ByVal Qval As Long = 1, _
+                           Optional ByVal GapOpen As Double = 1, _
+                           Optional ByVal GapExt As Double = 0.4) As Double
+    GOTOH_NSIM = Gotoh_NormalizedSimilarity(Text1, Text2, CaseSensitive, Qval, GapOpen, GapExt)
+End Function
+
+Public Function GOTOH_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True, _
+                            Optional ByVal Qval As Long = 1, _
+                            Optional ByVal GapOpen As Double = 1, _
+                            Optional ByVal GapExt As Double = 0.4) As Double
+    GOTOH_NDIST = Gotoh_NormalizedDistance(Text1, Text2, CaseSensitive, Qval, GapOpen, GapExt)
+End Function
+
+Public Function SMITH_WATERMAN(ByVal Text1 As String, ByVal Text2 As String, _
+                               Optional ByVal CaseSensitive As Boolean = True, _
+                               Optional ByVal Qval As Long = 1, _
+                               Optional ByVal GapCost As Double = 1) As Double
+    SMITH_WATERMAN = SmithWaterman_Similarity(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function SMITH_WATERMAN_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                    Optional ByVal CaseSensitive As Boolean = True, _
+                                    Optional ByVal Qval As Long = 1, _
+                                    Optional ByVal GapCost As Double = 1) As Double
+    SMITH_WATERMAN_DIST = SmithWaterman_Distance(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function SMITH_WATERMAN_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                                    Optional ByVal CaseSensitive As Boolean = True, _
+                                    Optional ByVal Qval As Long = 1, _
+                                    Optional ByVal GapCost As Double = 1) As Double
+    SMITH_WATERMAN_NSIM = SmithWaterman_NormalizedSimilarity(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function SMITH_WATERMAN_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                     Optional ByVal CaseSensitive As Boolean = True, _
+                                     Optional ByVal Qval As Long = 1, _
+                                     Optional ByVal GapCost As Double = 1) As Double
+    SMITH_WATERMAN_NDIST = SmithWaterman_NormalizedDistance(Text1, Text2, CaseSensitive, Qval, GapCost)
+End Function
+
+Public Function MLIPNS(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True, _
+                       Optional ByVal Qval As Long = 1, _
+                       Optional ByVal Threshold As Double = 0.25, _
+                       Optional ByVal MaxMismatches As Long = 2) As Long
+    MLIPNS = MLIPNS_Similarity(Text1, Text2, CaseSensitive, Qval, Threshold, MaxMismatches)
+End Function
+
+Public Function ARITH_NCD(ByVal Text1 As String, ByVal Text2 As String, _
+                          Optional ByVal CaseSensitive As Boolean = True, _
+                          Optional ByVal LogBase As Double = 2) As Double
+    ARITH_NCD = ArithNCD_Distance(Text1, Text2, CaseSensitive, LogBase)
+End Function
+
+Public Function ARITH_NCD_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal CaseSensitive As Boolean = True, _
+                              Optional ByVal LogBase As Double = 2) As Double
+    ARITH_NCD_SIM = ArithNCD_Similarity(Text1, Text2, CaseSensitive, LogBase)
+End Function
+
+Public Function RLE_NCD(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True) As Double
+    RLE_NCD = RLENCD_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function RLE_NCD_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True) As Double
+    RLE_NCD_SIM = RLENCD_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function BWTRLE_NCD(ByVal Text1 As String, ByVal Text2 As String, _
+                           Optional ByVal CaseSensitive As Boolean = True) As Double
+    BWTRLE_NCD = BWTRLENCD_Distance(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function BWTRLE_NCD_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                               Optional ByVal CaseSensitive As Boolean = True) As Double
+    BWTRLE_NCD_SIM = BWTRLENCD_Similarity(Text1, Text2, CaseSensitive)
+End Function
+
+Public Function SQRT_NCD(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal CaseSensitive As Boolean = True, _
+                         Optional ByVal Qval As Long = 1) As Double
+    SQRT_NCD = SqrtNCD_Distance(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function SQRT_NCD_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True, _
+                             Optional ByVal Qval As Long = 1) As Double
+    SQRT_NCD_SIM = SqrtNCD_Similarity(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function ENTROPY_NCD(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True, _
+                            Optional ByVal Qval As Long = 1, _
+                            Optional ByVal Coef As Double = 1, _
+                            Optional ByVal LogBase As Double = 2) As Double
+    ENTROPY_NCD = EntropyNCD_Distance(Text1, Text2, CaseSensitive, Qval, Coef, LogBase)
+End Function
+
+Public Function ENTROPY_NCD_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                                Optional ByVal CaseSensitive As Boolean = True, _
+                                Optional ByVal Qval As Long = 1, _
+                                Optional ByVal Coef As Double = 1, _
+                                Optional ByVal LogBase As Double = 2) As Double
+    ENTROPY_NCD_SIM = EntropyNCD_Similarity(Text1, Text2, CaseSensitive, Qval, Coef, LogBase)
 End Function

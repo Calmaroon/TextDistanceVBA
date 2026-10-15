@@ -24,6 +24,11 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Prefix, Postfix, Length, Identity, Matrix | `Simple.bas` | Done |
 | MRA, Editex | `Phonetic.bas` | Done |
 | Cosine, Jaccard, Sorensen-Dice, Tversky, Overlap, Tanimoto, Monge-Elkan, Bag | `TokenBased.bas` | Done |
+| StrCmp95 | `StrCmp95.bas` | Done |
+| Needleman-Wunsch, Gotoh, Smith-Waterman | `Alignment.bas` | Done |
+| MLIPNS | `MLIPNS.bas` | Done |
+| Arithmetic, RLE, BWT-RLE, Square-root and Entropy NCD | `Compression.bas` | Done |
+| zlib, bz2 and LZMA NCD | - | Not ported (need compression libraries VBA does not have) |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -150,6 +155,55 @@ These follow textdistance exactly, including some quirks:
 - **Bag**'s maximum is the longer string's length in characters, even when comparing words.
 - When a non-empty string has no tokens (e.g. `"a"` with `Qval` 2), Python raises an error; this port returns a similarity of 0.
 
+### StrCmp95
+The U.S. Census Bureau's comparator: Jaro-Winkler plus partial credit for characters people or OCR often confuse (O/0, I/1, M/N, ...). Similarity from 0 to 1. Always case-insensitive and ignores leading/trailing whitespace. Optional argument: `LongStrings` (default `False`).
+
+```vba
+Debug.Print StrCmp95_Similarity("MARTHA", "MARHTA")   ' 0.961...
+```
+
+### Alignment scores (`Alignment.bas`)
+Score the best alignment of the two strings: +1 per matching token, 0 per mismatch, minus gap penalties. Optional arguments: `CaseSensitive`, `Qval` (as for the token measures), and the gap costs.
+
+| Algorithm | Gaps | Distance | Maximum / Minimum |
+|---|---|---|---|
+| `NeedlemanWunsch_*` | `GapCost` per position (default 1) | `-Similarity` | longer length / `-longer length * GapCost` |
+| `Gotoh_*` | `GapOpen` (1) then `GapExt` (0.4) per extra position | `-Similarity` | shorter length / `-shorter length` |
+| `SmithWaterman_*` | `GapCost` per position (default 1); local alignment, never below 0 | `Maximum - Similarity` | shorter length |
+
+Normalized values follow textdistance's formulas, and maximum/minimum use the lengths in characters even when `Qval` is not 1. As in textdistance, Smith-Waterman returns the score in the table's last cell. Where Python raises an error for Gotoh with exactly one empty string, this port returns the cost of one gap of the other's length.
+
+```vba
+Debug.Print NeedlemanWunsch_Similarity("GATTACA", "GCATGCU")   ' 3
+Debug.Print SmithWaterman_Similarity("GATTACA", "GCATGCU")     ' 3
+```
+
+### MLIPNS
+Modified Language-Independent Product Name Search: 1 if the strings match after forgiving up to `MaxMismatches` (default 2) Hamming mismatches with `Threshold` (default 0.25), else 0. Optional arguments: `CaseSensitive`, `Qval`, `Threshold`, `MaxMismatches`.
+
+```vba
+Debug.Print MLIPNS_Similarity("Tomato", "Potato")   ' 1
+Debug.Print MLIPNS_Similarity("Tomato", "Banana")   ' 0
+```
+
+### Compression distances (`Compression.bas`)
+Normalized compression distance: `(C(s1 + s2) - Min(C(s1), C(s2))) / Max(C(s1), C(s2))`, where `C` is a compressed size and `C(s1 + s2)` the smaller of the two concatenation orders. Distance is the primary value (it can exceed 1); `Similarity = 1 - Distance`.
+
+| Prefix | Compressed size `C` | Optional arguments |
+|---|---|---|
+| `ArithNCD_*` | Arithmetic-coding length in digits of `LogBase` | `CaseSensitive`, `LogBase` (2) |
+| `RLENCD_*` | Run-length-encoded length (`aaab` becomes `3ab`) | `CaseSensitive` |
+| `BWTRLENCD_*` | RLE length after a Burrows-Wheeler transform | `CaseSensitive`, `Terminator` (`ChrW(0)`) |
+| `SqrtNCD_*` | Sum of the square roots of token counts | `CaseSensitive`, `Qval` |
+| `EntropyNCD_*` | `Coef` + entropy of the tokens | `CaseSensitive`, `Qval`, `Coef` (1), `LogBase` (2) |
+
+```vba
+Debug.Print RLENCD_Distance("aaabbb", "aaaccc")   ' 1
+Debug.Print EntropyNCD_Distance("test", "text")   ' 0.1
+```
+
+textdistance's zlib, bz2 and LZMA versions are not included because VBA has no built-in compression libraries.
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -186,6 +240,12 @@ With `Excel_UDF.bas` imported:
 | `=TVERSKY(A1, B1, [CaseSensitive], [Qval], [AsSet], [Alpha], [Beta], [Bias])`, `=TVERSKY_DIST(...)` | `Tversky_Similarity`, `Tversky_Distance` |
 | `=MONGE_ELKAN(A1, B1, [CaseSensitive], [Qval], [Symmetric])`, `=MONGE_ELKAN_DIST(...)` | `MongeElkan_Similarity`, `MongeElkan_Distance` |
 | `=BAG(A1, B1, [CaseSensitive], [Qval])`, `_SIM`, `_NDIST`, `_NSIM` | `Bag_*` |
+| `=STRCMP95(A1, B1, [LongStrings])`, `=STRCMP95_DIST(...)` | `StrCmp95_Similarity`, `StrCmp95_Distance` |
+| `=NEEDLEMAN_WUNSCH(A1, B1, [CaseSensitive], [Qval], [GapCost])`, `_DIST`, `_NSIM`, `_NDIST` | `NeedlemanWunsch_*` |
+| `=GOTOH(A1, B1, [CaseSensitive], [Qval], [GapOpen], [GapExt])`, `_DIST`, `_NSIM`, `_NDIST` | `Gotoh_*` |
+| `=SMITH_WATERMAN(A1, B1, [CaseSensitive], [Qval], [GapCost])`, `_DIST`, `_NSIM`, `_NDIST` | `SmithWaterman_*` |
+| `=MLIPNS(A1, B1, [CaseSensitive], [Qval], [Threshold], [MaxMismatches])` | `MLIPNS_Similarity` |
+| `=ARITH_NCD(A1, B1, [CaseSensitive], [LogBase])`, `=RLE_NCD(...)`, `=BWTRLE_NCD(...)`, `=SQRT_NCD(..., [Qval])`, `=ENTROPY_NCD(..., [Qval], [Coef], [LogBase])` and their `_SIM` versions | `*NCD_Distance`, `*NCD_Similarity` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 

@@ -128,6 +128,61 @@ ALGORITHMS["Bag"] = ("Bag", [
     ("2", td.Bag(qval=2, external=False)),
 ], True)
 
+class Gotoh(td.Gotoh):
+    """textdistance.Gotoh, except that exactly one empty token list (an IndexError
+    in Python) gives the cost of one gap of the other's length, as the VBA port does."""
+    def __call__(self, s1, s2):
+        t1, t2 = self._get_sequences(s1, s2)
+        if bool(t1) != bool(t2):
+            n = len(t1) or len(t2)
+            return -self.gap_open - self.gap_ext * (n - 1)
+        return super().__call__(s1, s2)
+
+
+ALGORITHMS["StrCmp95"] = ("StrCmp95", [
+    ("False", td.StrCmp95(long_strings=False, external=False)),
+    ("True", td.StrCmp95(long_strings=True, external=False)),
+], False)
+ALGORITHMS["NeedlemanWunsch"] = ("NeedlemanWunsch", [
+    ("1, 1", td.NeedlemanWunsch(gap_cost=1, qval=1, external=False)),
+    ("0, 1", td.NeedlemanWunsch(gap_cost=1, qval=None, external=False)),
+    ("1, 0.5", td.NeedlemanWunsch(gap_cost=0.5, qval=1, external=False)),
+    ("2, 2", td.NeedlemanWunsch(gap_cost=2, qval=2, external=False)),
+], False)
+ALGORITHMS["Gotoh"] = ("Gotoh", [
+    ("1, 1, 0.4", Gotoh(gap_open=1, gap_ext=0.4, qval=1, external=False)),
+    ("0, 1, 0.4", Gotoh(gap_open=1, gap_ext=0.4, qval=None, external=False)),
+    ("1, 2, 0.5", Gotoh(gap_open=2, gap_ext=0.5, qval=1, external=False)),
+    ("2, 1, 0.4", Gotoh(gap_open=1, gap_ext=0.4, qval=2, external=False)),
+], False)
+ALGORITHMS["SmithWaterman"] = ("SmithWaterman", [
+    ("1, 1", td.SmithWaterman(gap_cost=1, qval=1, external=False)),
+    ("0, 1", td.SmithWaterman(gap_cost=1, qval=None, external=False)),
+    ("1, 0.5", td.SmithWaterman(gap_cost=0.5, qval=1, external=False)),
+    ("2, 1", td.SmithWaterman(gap_cost=1, qval=2, external=False)),
+], False)
+ALGORITHMS["MLIPNS"] = ("MLIPNS", [
+    ("1, 0.25, 2", td.MLIPNS(threshold=0.25, maxmismatches=2, qval=1, external=False)),
+    ("0, 0.25, 2", td.MLIPNS(threshold=0.25, maxmismatches=2, qval=None, external=False)),
+    ("1, 0.5, 1", td.MLIPNS(threshold=0.5, maxmismatches=1, qval=1, external=False)),
+    ("2, 0.25, 2", td.MLIPNS(threshold=0.25, maxmismatches=2, qval=2, external=False)),
+], True)
+ALGORITHMS["ArithNCD"] = ("ArithNCD", [("2", td.ArithNCD(base=2)), ("10", td.ArithNCD(base=10))], False)
+ALGORITHMS["RLENCD"] = ("RLENCD", [("", td.RLENCD())], False)
+ALGORITHMS["BWTRLENCD"] = ("BWTRLENCD", [("", td.BWTRLENCD())], False)
+ALGORITHMS["SqrtNCD"] = ("SqrtNCD", [
+    ("1", td.SqrtNCD(qval=1)), ("0", td.SqrtNCD(qval=None)), ("2", td.SqrtNCD(qval=2))], False)
+ALGORITHMS["EntropyNCD"] = ("EntropyNCD", [
+    ("1, 1, 2", td.EntropyNCD(qval=1, coef=1, base=2)),
+    ("0, 1, 2", td.EntropyNCD(qval=None, coef=1, base=2)),
+    ("1, 2, 10", td.EntropyNCD(qval=1, coef=2, base=10))], False)
+
+OCR_CASES = [("B0B", "BOB"), ("1LL", "ILL"), ("  MARTHA ", "marhta"), ("DIXON", "DICKSONX"),
+             ("MASSEY", "MASSIE"), ("ABROMS", "ABRAMS"), ("HARDIN", "MARTINEZ"),
+             ("JON", "JAN"), ("12345", "12354"), ("SHACKLEFORD", "SHACKELFORD")]
+DNA_CASES = [("GATTACA", "GCATGCU"), ("AGTACGCA", "TATGC"), ("ACACACTA", "AGCACACA"),
+             ("TGTTACGG", "GGTTGACTA"), ("A", "AAAA")]
+
 WORD_CASES = [("the quick brown fox", "the lazy brown dog"), ("Smith John", "John Smith"),
               ("a b c a", "a a d"), ("tab\tseparated words", "tab separated  words"),
               ("  leading", "leading  "), ("New York City", "new york"),
@@ -136,7 +191,7 @@ WORD_CASES = [("the quick brown fox", "the lazy brown dog"), ("Smith John", "Joh
               ("nelson", "neilsen"), ("one two two three", "two two two")]
 
 # Algorithms that always ignore case (no CaseSensitive argument)
-NO_CASE_ARG = {"MRA", "Editex"}
+NO_CASE_ARG = {"MRA", "Editex", "StrCmp95"}
 # Extra cases for particular algorithms
 NAME_CASES = [("Byrne", "Boern"), ("Smith", "Smyth"), ("Catherine", "Kathryn"),
               ("Robert", "Rupert"), ("Ashcraft", "Ashcroft"), ("Thompson", "Thomson"),
@@ -146,6 +201,15 @@ NAME_CASES = [("Byrne", "Boern"), ("Smith", "Smyth"), ("Catherine", "Kathryn"),
 EXTRA_CASES = {"MRA": NAME_CASES, "Editex": NAME_CASES}
 for _name in ("Cosine", "Jaccard", "Sorensen", "Tversky", "Overlap", "Tanimoto", "MongeElkan", "Bag"):
     EXTRA_CASES[_name] = WORD_CASES
+EXTRA_CASES["StrCmp95"] = NAME_CASES + OCR_CASES
+EXTRA_CASES["MLIPNS"] = NAME_CASES + WORD_CASES
+for _name in ("NeedlemanWunsch", "Gotoh", "SmithWaterman"):
+    EXTRA_CASES[_name] = DNA_CASES + WORD_CASES
+for _name in ("SqrtNCD", "EntropyNCD"):
+    EXTRA_CASES[_name] = WORD_CASES
+for _name in ("ArithNCD", "RLENCD", "BWTRLENCD"):
+    EXTRA_CASES[_name] = [("aaabbbccc", "aaabbbddd"), ("banana", "bananas"), ("abababab", "babababa"),
+                          ("zero\x00byte", "zero byte")]
 
 # Matrix takes a lookup table instead of the usual arguments; see matrix_checks
 DNA_TABLE = [("A", "A", 10), ("G", "G", 7), ("C", "C", 9), ("T", "T", 8),
@@ -158,7 +222,11 @@ HELPERS = {"Matrix": [("DnaTable", DNA_TABLE), ("DupTable", DUP_TABLE)]}
 STRING_FUNCS = {"LCSSeq": "Sequence", "LCSStr": "Substring",
                 "Prefix": "CommonPrefix", "Postfix": "CommonPostfix"}
 # Algorithms also tested on 200+ character strings
-LONG_CASE_ALGOS = {"LCSSeq", "LCSStr", "RatcliffObershelp"}
+# ArithNCD's big-number arithmetic is slow in LibreOffice: use three long cases,
+# covering numerators over 53 bits and over 2^1024 (beyond a Double)
+LONG_CASE_PICK = {"ArithNCD": {1, 2, 5}}
+LONG_CASE_ALGOS = {"LCSSeq", "LCSStr", "RatcliffObershelp",
+                   "ArithNCD", "RLENCD", "BWTRLENCD"}
 
 # Which test module each algorithm's tests go into
 TEST_FILES = {
@@ -184,6 +252,16 @@ TEST_FILES = {
     "TanimotoTests": ["Tanimoto"],
     "MongeElkanTests": ["MongeElkan"],
     "BagTests": ["Bag"],
+    "StrCmp95Tests": ["StrCmp95"],
+    "NeedlemanWunschTests": ["NeedlemanWunsch"],
+    "GotohTests": ["Gotoh"],
+    "SmithWatermanTests": ["SmithWaterman"],
+    "MLIPNSTests": ["MLIPNS"],
+    "ArithNCDTests": ["ArithNCD"],
+    "RLENCDTests": ["RLENCD"],
+    "BWTRLENCDTests": ["BWTRLENCD"],
+    "SqrtNCDTests": ["SqrtNCD"],
+    "EntropyNCDTests": ["EntropyNCD"],
 }
 
 
@@ -219,7 +297,8 @@ def checks_for(name, seed):
     check = "CheckL" if integer else "CheckD"
     cases = COMMON_CASES + random_cases(seed)
     if name in LONG_CASE_ALGOS:
-        cases += long_cases(seed)
+        picked = LONG_CASE_PICK.get(name)
+        cases += [c for i, c in enumerate(long_cases(seed)) if picked is None or i in picked]
     cases += EXTRA_CASES.get(name, [])
     cs_arg = "" if name in NO_CASE_ARG else ", True"
     lines = []
