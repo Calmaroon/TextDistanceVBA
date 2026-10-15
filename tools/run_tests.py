@@ -3,7 +3,7 @@
 LibreOffice Basic is not Office VBA, but with `Option VBASupport 1` it is
 close enough to catch compile errors and logic bugs without Windows.
 
-Usage:  python3 tools/run_tests.py
+Usage:  python3 tools/run_tests.py [TestName ...]   e.g. Hamming Levenshtein
 Requires LibreOffice and its Python UNO bridge (python3-uno).
 """
 import glob
@@ -18,10 +18,10 @@ import uno
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = 2083
 
-# Library modules to load (Excel_UDF needs Excel's object model, so skip it)
-LIBRARY = sorted(f for f in glob.glob(os.path.join(ROOT, "*.bas"))
-                 if os.path.basename(f) != "Excel_UDF.bas")
-TESTS = sorted(glob.glob(os.path.join(ROOT, "tests", "*.bas")))
+LIBRARY = sorted(glob.glob(os.path.join(ROOT, "*.bas")))
+TESTS = sorted(f for f in glob.glob(os.path.join(ROOT, "tests", "*.bas"))
+               if not sys.argv[1:] or
+               os.path.basename(f)[:-len("Tests.bas")] in sys.argv[1:])
 
 HARNESS = """Option VBASupport 1
 Option Explicit
@@ -37,6 +37,54 @@ Public Function RunTest(ByVal Name As String) As String
     RunTest = gLog
 End Function
 """
+
+
+# Worksheet formulas for Excel_UDF.bas (Calc uses ; as argument separator)
+UDF_CELLS = {"A1": "martha", "B1": "marhta", "A2": 12345, "B2": 12354}
+UDF_FORMULAS = [
+    ('=HAMMING("test";"testing")', 3), ('=HAMMING_SIM("test";"text")', 3),
+    ('=HAMMING_NSIM("Test";"text";0)', 0.75),
+    ('=LEVENSHTEIN("kitten";"sitting")', 3), ('=LEVENSHTEIN(A2;B2)', 2),
+    ('=LEVENSHTEIN(A1;C9)', 6), ('=LEVENSHTEIN_NDIST("kitten";"sitting")', 3 / 7),
+    ('=DAMERAU_LEVENSHTEIN("ca";"abc")', 3), ('=DAMERAU_LEVENSHTEIN("ca";"abc";1;0)', 2),
+    ('=JARO(A1;B1)', 0.9444444444444445), ('=JARO_DIST(A1;B1)', 0.0555555555555555),
+    ('=JARO_WINKLER(A1;B1)', 0.9611111111111111), ('=JARO_WINKLER_DIST(A1;B1)', 0.0388888888888889),
+]
+
+
+def check_udfs(doc):
+    sheet = doc.Sheets.getByIndex(0)
+    for ref, value in UDF_CELLS.items():
+        cell = sheet.getCellRangeByName(ref)
+        if isinstance(value, str):
+            cell.String = value
+        else:
+            cell.Value = value
+    for row, (formula, _) in enumerate(UDF_FORMULAS):
+        sheet.getCellByPosition(3, row).Formula = formula
+    doc.calculateAll()
+    failures = 0
+    for row, (formula, expected) in enumerate(UDF_FORMULAS):
+        cell = sheet.getCellByPosition(3, row)
+        if cell.getError() or abs(cell.Value - expected) > 1e-9:
+            failures += 1
+            print(f"FAIL {formula}: got {cell.String}, expected {expected}")
+    print(f"Excel UDFs: {len(UDF_FORMULAS) - failures} passed, {failures} failed")
+    return failures == 0
+
+
+def enable_macros(ctx):
+    """Allow document macros so Calc formulas can call the Basic functions."""
+    from com.sun.star.beans import PropertyValue
+    provider = ctx.ServiceManager.createInstanceWithContext(
+        "com.sun.star.configuration.ConfigurationProvider", ctx)
+    node = PropertyValue(Name="nodepath",
+                         Value="/org.openoffice.Office.Common/Security/Scripting")
+    access = provider.createInstanceWithArguments(
+        "com.sun.star.configuration.ConfigurationUpdateAccess", (node,))
+    access.setPropertyValue("MacroSecurityLevel", 0)
+    access.commitChanges()
+    return (PropertyValue(Name="MacroExecutionMode", Value=4),)  # ALWAYS_EXECUTE_NO_WARN
 
 
 def load_source(path, is_test):
@@ -71,7 +119,8 @@ def main():
         ctx = connect()
         desktop = ctx.ServiceManager.createInstanceWithContext(
             "com.sun.star.frame.Desktop", ctx)
-        doc = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
+        doc = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0,
+                                           enable_macros(ctx))
         libs = doc.BasicLibraries
         if not libs.hasByName("Standard"):
             libs.createLibrary("Standard")
@@ -96,10 +145,12 @@ def main():
         failed = False
         for sub in test_subs:
             output = script.invoke((sub,), (), ())[0]
-            print(output, end="")
+            print(output if output.strip() else f"{sub}: no output (Basic error?)\n", end="")
             summary = output.strip().splitlines()[-1] if output.strip() else ""
             if not re.search(r" 0 failed$", summary):
                 failed = True
+        if not sys.argv[1:] and not check_udfs(doc):
+            failed = True
         doc.close(True)
         return 1 if failed or not test_subs else 0
     finally:
