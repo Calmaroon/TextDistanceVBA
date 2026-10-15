@@ -8,10 +8,10 @@ Attribute VB_Name = "modExcelUDF"
 ' error values without calling the function.
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
-' textdistance.<name>(a, b): a distance for edit distances, a similarity for
-' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix / MRA / Cosine,
-' and the
-' matching text itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
+' textdistance.<name>(a, b): a distance for edit distances and Bag, a
+' similarity for Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix /
+' MRA and the token measures (Cosine, Jaccard, ...), and the matching text
+' itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
 '           =LEVENSHTEIN_NSIM(A2, B2, FALSE) -> case-insensitive similarity 0..1
@@ -346,4 +346,118 @@ Public Function COSINE_DIST(ByVal Text1 As String, ByVal Text2 As String, _
                             Optional ByVal Qval As Long = 1, _
                             Optional ByVal AsSet As Boolean = False) As Double
     COSINE_DIST = Cosine_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function JACCARD(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True, _
+                        Optional ByVal Qval As Long = 1, _
+                        Optional ByVal AsSet As Boolean = False) As Double
+    JACCARD = Jaccard_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function JACCARD_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True, _
+                             Optional ByVal Qval As Long = 1, _
+                             Optional ByVal AsSet As Boolean = False) As Double
+    JACCARD_DIST = Jaccard_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function SORENSEN(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal CaseSensitive As Boolean = True, _
+                         Optional ByVal Qval As Long = 1, _
+                         Optional ByVal AsSet As Boolean = False) As Double
+    SORENSEN = Sorensen_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function SORENSEN_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal CaseSensitive As Boolean = True, _
+                              Optional ByVal Qval As Long = 1, _
+                              Optional ByVal AsSet As Boolean = False) As Double
+    SORENSEN_DIST = Sorensen_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function OVERLAP(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True, _
+                        Optional ByVal Qval As Long = 1, _
+                        Optional ByVal AsSet As Boolean = False) As Double
+    OVERLAP = Overlap_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function OVERLAP_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True, _
+                             Optional ByVal Qval As Long = 1, _
+                             Optional ByVal AsSet As Boolean = False) As Double
+    OVERLAP_DIST = Overlap_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function TANIMOTO(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal CaseSensitive As Boolean = True, _
+                         Optional ByVal Qval As Long = 1, _
+                         Optional ByVal AsSet As Boolean = False) As Double
+    TANIMOTO = Tanimoto_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function TANIMOTO_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                              Optional ByVal CaseSensitive As Boolean = True, _
+                              Optional ByVal Qval As Long = 1, _
+                              Optional ByVal AsSet As Boolean = False) As Double
+    TANIMOTO_DIST = Tanimoto_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function TVERSKY(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True, _
+                        Optional ByVal Qval As Long = 1, _
+                        Optional ByVal AsSet As Boolean = False, _
+                        Optional ByVal Alpha As Double = 1, _
+                        Optional ByVal Beta As Double = 1, _
+                        Optional ByVal Bias As Variant) As Double
+    TVERSKY = Tversky_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet, Alpha, Beta, Bias)
+End Function
+
+Public Function TVERSKY_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                             Optional ByVal CaseSensitive As Boolean = True, _
+                             Optional ByVal Qval As Long = 1, _
+                             Optional ByVal AsSet As Boolean = False, _
+                             Optional ByVal Alpha As Double = 1, _
+                             Optional ByVal Beta As Double = 1, _
+                             Optional ByVal Bias As Variant) As Double
+    TVERSKY_DIST = Tversky_Distance(Text1, Text2, CaseSensitive, Qval, AsSet, Alpha, Beta, Bias)
+End Function
+
+Public Function MONGE_ELKAN(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True, _
+                            Optional ByVal Qval As Long = 1, _
+                            Optional ByVal Symmetric As Boolean = False) As Double
+    MONGE_ELKAN = MongeElkan_Similarity(Text1, Text2, CaseSensitive, Qval, Symmetric)
+End Function
+
+Public Function MONGE_ELKAN_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                                 Optional ByVal CaseSensitive As Boolean = True, _
+                                 Optional ByVal Qval As Long = 1, _
+                                 Optional ByVal Symmetric As Boolean = False) As Double
+    MONGE_ELKAN_DIST = MongeElkan_Distance(Text1, Text2, CaseSensitive, Qval, Symmetric)
+End Function
+
+Public Function BAG(ByVal Text1 As String, ByVal Text2 As String, _
+                    Optional ByVal CaseSensitive As Boolean = True, _
+                    Optional ByVal Qval As Long = 1) As Long
+    BAG = Bag_Distance(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function BAG_SIM(ByVal Text1 As String, ByVal Text2 As String, _
+                        Optional ByVal CaseSensitive As Boolean = True, _
+                        Optional ByVal Qval As Long = 1) As Long
+    BAG_SIM = Bag_Similarity(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function BAG_NDIST(ByVal Text1 As String, ByVal Text2 As String, _
+                          Optional ByVal CaseSensitive As Boolean = True, _
+                          Optional ByVal Qval As Long = 1) As Double
+    BAG_NDIST = Bag_NormalizedDistance(Text1, Text2, CaseSensitive, Qval)
+End Function
+
+Public Function BAG_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
+                         Optional ByVal CaseSensitive As Boolean = True, _
+                         Optional ByVal Qval As Long = 1) As Double
+    BAG_NSIM = Bag_NormalizedSimilarity(Text1, Text2, CaseSensitive, Qval)
 End Function
