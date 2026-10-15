@@ -76,6 +76,21 @@ UDF_FORMULAS = [
     ('=TVERSKY("test";"text";1;1;0;1;1;1)', 0.5),
     ('=MONGE_ELKAN("hello world";"hello word";1;0)', 2.25),
     ('=BAG("abc";"abd")', 1),
+    ('=STRCMP95(A1;B1)', 0.9611111111111111),
+    ('=STRCMP95_DIST("B0B";"BOB")', 0.14),
+    ('=NEEDLEMAN_WUNSCH("GATTACA";"GCATGCU")', 3.0),
+    ('=NEEDLEMAN_WUNSCH_NSIM("GATTACA";"GCATGCU";1;1;0.5)', 0.4642857142857143),
+    ('=GOTOH("GATTACA";"GCATGCU")', 3.0),
+    ('=GOTOH("GATTACA";"GCATGCU";1;1;2;0.5)', 3.0),
+    ('=SMITH_WATERMAN("GATTACA";"GCATGCU")', 3.0),
+    ('=SMITH_WATERMAN_NDIST("John Smith";"Smith";1;0)', 0.8),
+    ('=MLIPNS("Tomato";"Potato")', 1.0),
+    ('=MLIPNS("Tomato";"Banana")', 0.0),
+    ('=ARITH_NCD("test";"text")', 1.3333333333333333),
+    ('=RLE_NCD("aaabbb";"aaaccc")', 1.0),
+    ('=BWTRLE_NCD("banana";"bananas")', 0.42857142857142855),
+    ('=SQRT_NCD_SIM("test";"text")', 0.41421356237309503),
+    ('=ENTROPY_NCD("test";"text")', 0.1),
 ]
 
 
