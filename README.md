@@ -23,6 +23,7 @@ In the VBA editor (Alt+F11) choose **File > Import File...** and import:
 | Ratcliff-Obershelp | `RatcliffObershelp.bas` | Done |
 | Prefix, Postfix, Length, Identity, Matrix | `Simple.bas` | Done |
 | MRA, Editex | `Phonetic.bas` | Done |
+| Cosine | `Cosine.bas` | Done |
 
 Every algorithm exposes the same five functions, prefixed with its name:
 
@@ -118,6 +119,19 @@ Debug.Print MRA_Similarity("Byrne", "Boern")    ' 1
 Debug.Print Editex_Distance("Byrne", "Boern")   ' 4
 ```
 
+### Cosine
+Cosine similarity (Ochiai coefficient): each string is treated as a bag of tokens and the result is `shared tokens / Sqr(tokens in s1 * tokens in s2)`, from 0 to 1. `Distance = 1 - Similarity`.
+
+Optional arguments: `CaseSensitive`, `Qval` (what a token is: `1` = characters (default), `2`+ = overlapping groups of that many characters, `0` = words separated by whitespace) and `AsSet` (default `False`; `True` counts each distinct token once).
+
+```vba
+Debug.Print Cosine_Similarity("nelson", "neilsen")                 ' 0.771...
+Debug.Print Cosine_Similarity("Smith John", "John Smith", True, 0) ' 1 (by words)
+Debug.Print Cosine_Similarity("night", "nacht", True, 2)           ' 0.25 (letter pairs)
+```
+
+When a non-empty string has no tokens (e.g. `"a"` with `Qval` 2), Python raises an error; this port returns 0.
+
 In Access you can call these directly in queries, e.g. `SELECT Hamming_Distance([Name1], [Name2]) FROM ...`.
 
 ## Excel worksheet functions
@@ -149,6 +163,7 @@ With `Excel_UDF.bas` imported:
 | `=MRACODEX(A1)` | `MRA_Codex` (returns text) |
 | `=MRA(A1, B1)`, `_DIST`, `_NDIST`, `_NSIM` | `MRA_*` |
 | `=EDITEX(A1, B1, [LocalMode], [MatchCost], [GroupCost], [MismatchCost])`, `_SIM`, `_NDIST`, `_NSIM` | `Editex_*` |
+| `=COSINE(A1, B1, [CaseSensitive], [Qval], [AsSet])`, `=COSINE_DIST(...)` | `Cosine_Similarity`, `Cosine_Distance` |
 
 The bare name returns the same value as Python's `textdistance.<name>(a, b)`. Cells, numbers and blanks are converted to text; multi-cell ranges and error values give `#VALUE!`.
 

@@ -9,7 +9,8 @@ Attribute VB_Name = "modExcelUDF"
 '
 ' Each bare name (=HAMMING, =JARO, ...) returns the same value as Python's
 ' textdistance.<name>(a, b): a distance for edit distances, a similarity for
-' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix / MRA, and the
+' Jaro / Jaro-Winkler / Ratcliff-Obershelp / Identity / Matrix / MRA / Cosine,
+' and the
 ' matching text itself for LCSSEQ / LCSSTR / PREFIX / POSTFIX.
 '
 ' Example:  =LEVENSHTEIN(A2, B2)            -> number of edits
@@ -331,4 +332,18 @@ Public Function EDITEX_NSIM(ByVal Text1 As String, ByVal Text2 As String, _
                             Optional ByVal GroupCost As Long = 1, _
                             Optional ByVal MismatchCost As Long = 2) As Double
     EDITEX_NSIM = Editex_NormalizedSimilarity(Text1, Text2, LocalMode, MatchCost, GroupCost, MismatchCost)
+End Function
+
+Public Function COSINE(ByVal Text1 As String, ByVal Text2 As String, _
+                       Optional ByVal CaseSensitive As Boolean = True, _
+                       Optional ByVal Qval As Long = 1, _
+                       Optional ByVal AsSet As Boolean = False) As Double
+    COSINE = Cosine_Similarity(Text1, Text2, CaseSensitive, Qval, AsSet)
+End Function
+
+Public Function COSINE_DIST(ByVal Text1 As String, ByVal Text2 As String, _
+                            Optional ByVal CaseSensitive As Boolean = True, _
+                            Optional ByVal Qval As Long = 1, _
+                            Optional ByVal AsSet As Boolean = False) As Double
+    COSINE_DIST = Cosine_Distance(Text1, Text2, CaseSensitive, Qval, AsSet)
 End Function

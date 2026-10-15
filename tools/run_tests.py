@@ -66,6 +66,8 @@ UDF_FORMULAS = [
     ('=MRACODEX("Catherine")', "CTHRN"), ('=MRA("Byrne";"Boern")', 1),
     ('=MRA_DIST("Smith";"Smyth")', 3), ('=EDITEX("Byrne";"Boern")', 4),
     ('=EDITEX_NSIM("Smith";"smith")', 1),
+    ('=COSINE("nelson";"neilsen")', 0.7715167498104595), ('=COSINE("Smith John";"John Smith";1;0)', 1),
+    ('=COSINE_DIST("Smith John";"john smith";0;0)', 0),
 ]
 
 
